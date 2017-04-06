@@ -1,26 +1,36 @@
-// document.addEventListener('click', function (event) {
-//     chrome.storage.sync.clear();
-//     // chrome.storage.sync.set({'events': []}, function() {});
-//     chrome.storage.sync.get('events', function (items) {
-//         console.log(items.events);
-//         items.events.push(event.type);
-//         console.log(items.events);
-//         chrome.storage.sync.set(items, function(error) {
-//             // console.log(error);
-//             // service worker
-//         });
-//     });
-// });
+var catchEvent = {
+    init: function () {
+        console.log('Here we are!');
+        for( var i in this.events ) {
+            console.log(this.events[i]);
+            this.addListener(this.events[i]);
+        }
+    },
+    events: ['click'],
 
-// var fn = function() {
-//   var a = document.querySelector('#innerControl_txtAnnualDays').value;
-//     console.log(a);
+    storeEvent: function (event) {
+        var object = {
+            'eventType': event.type,
+            'eventTarget': event.target
+        };
+        chrome.storage.sync.get('events', function (items) {
+            if (items.events) {
+                var events = items.events;
+                console.log(items);
+                events.push(object);
+                console.log(items);
+                items.events = events;
+                chrome.storage.sync.set(items);
+            }
+        });
+    },
+    addListener: function(event) {
+        document.addEventListener(event, this.storeEvent(event));
+    }
+};
+catchEvent.init();
+
+// var x = function () {
+//     catchEvent.init();
 // };
-
-window.onload = function ()
-{
-    var a = document.querySelector('#innerControl_txtAnnualDays').value;
-    alert(a);
-}
-
-
+// x();
