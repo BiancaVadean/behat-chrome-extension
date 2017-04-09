@@ -2,7 +2,9 @@
 var popup = {
     start: false,
     statusButton: document.getElementById('status'),
+    background: null,
     init: function() {
+        this.background = chrome.extension.getBackgroundPage();
         chrome.storage.sync.set({'events': []}, function () {
             console.log('Storage set empty!');
         });
@@ -25,15 +27,16 @@ var popup = {
         }
     },
     changeStatus: function () {
-        this.start = !this.start;
-        console.log(this.start);
-        if (this.start) {
+        var background = chrome.extension.getBackgroundPage();
+        background.page.changeStatus();
+        console.log(background.page);
+        if (background.page.started) {
             document.getElementById('status').value = "End";
         } else {
             document.getElementById('status').value = "Start";
             chrome.storage.sync.get('events', function(items) {
                 for (var event in items.events) {
-                    console.log(event);
+                    console.log(items.events[event].eventTarget.value);
                 }
             })
         }

@@ -17,5 +17,8 @@
   "content_scripts": [{
     "matches":["http://*/*","https://*/*"],
     "js": ["catch_event.js"]
-  }]
+  }],
+  "background": {
+    "scripts": ["background.js"]
+  }
 }
