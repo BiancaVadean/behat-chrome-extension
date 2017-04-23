@@ -16,7 +16,7 @@
   ],
   "content_scripts": [{
     "matches":["http://*/*","https://*/*"],
-    "js": ["catch_event.js"]
+    "js": ["jquery-3.2.1.min.js", "catch_event.js"]
   }],
   "background": {
     "scripts": ["background.js"]
