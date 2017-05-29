@@ -74,6 +74,9 @@ var catchEvent = {
     events: [
         'change',
         'click',
+        'focus',
+        'submit',
+        // 'mouseover'
     ],
 
     storeEvent: function (event) {
@@ -83,18 +86,33 @@ var catchEvent = {
 
                 var object = {
                     'eventType': event.type,
-                    'eventTarget': event.target
+                    'eventTarget': $(event.target).getPath()
                 };
+                if (event.type === 'change') {
+                    object.value = $(event.target).val();
+                }
+
+                if (event.type === 'mouseover') {
+                    console.log($(event.target))
+                    $(event.target).css('border', '2px solid red');
+                }
+                console.log(object);
                 chrome.storage.sync.get('events', function (items) {
-                    console.log(items);
                     var events;
 
                     if (items.events) {
                         events = items.events;
                     } else {
                         events = [];
+                        console.log(window.location.href)
+                        var myLocation = {
+                            'eventType': 'navigation',
+                            'eventTarget': '',
+                            'value': window.location.href
+                        };
+                        events.push(myLocation);
                     }
-
+                    console.log(events);
                     events.push(object);
                     items.events = events;
                     chrome.storage.sync.set(items);
@@ -106,7 +124,7 @@ var catchEvent = {
 
     },
     addListener: function (event) {
-        console.log(event);
+        console.log(event)
         document.addEventListener(event, this.storeEvent);
     },
 

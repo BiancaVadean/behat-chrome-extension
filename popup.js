@@ -4,10 +4,7 @@ var popup = {
     statusButton: document.getElementById('status'),
     background: null,
     init: function() {
-        // chrome.storage.sync.clear(function() {
-        //     console.log('All cleared!');
-        //     return;
-        // })
+
         var _this = this;
         chrome.storage.sync.get('status', function (status) {
             _this.start = status.status;
@@ -28,7 +25,6 @@ var popup = {
                 chrome.storage.sync.set({'status': false});
             } else {
                 _this.start = true;
-                console.log(_this);
                 _this.displayStatus();
                 chrome.storage.sync.set({'status': true});
             }
@@ -41,10 +37,19 @@ var popup = {
         } else {
             document.getElementById('status').value = "Start";
             chrome.storage.sync.get('events', function(items) {
-                console.log(items.events);
-                for (var event in items.events) {
-                    // console.log(items.events[event].eventTarget.value);
+                console.log(JSON.stringify(items));
+                if (items.events) {
+                    $.post('http://symfony3/index', {'events': items.events}, function(data, status) {
+                        console.log(data);
+                        console.log(status);
+                        chrome.storage.sync.clear(function() {
+                            console.log('All cleared!');
+                            return;
+                        });
+                    });
                 }
+
+
             })
         }
     }
