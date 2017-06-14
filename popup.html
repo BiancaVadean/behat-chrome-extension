@@ -5,20 +5,25 @@
  value "popup.html".
  -->
 <html>
-  <head>
-    <title>Getting Started Extension's Popup</title>
+<head>
+    <title>Behat recorder</title>
     <style>
-      body {
-        font-family: "Segoe UI", "Lucida Grande", Tahoma, sans-serif;
-        font-size: 100%;
-      }
-      #status {
-        /* avoid an excessively wide status text */
-        white-space: pre;
-        text-overflow: ellipsis;
-        overflow: hidden;
-        max-width: 400px;
-      }
+        body {
+            font-family: "Segoe UI", "Lucida Grande", Tahoma, sans-serif;
+            font-size: 100%;
+        }
+
+        #status {
+            /* avoid an excessively wide status text */
+            white-space: pre;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            max-width: 400px;
+        }
+
+        .hidden {
+            display: none;
+        }
     </style>
 
     <!--
@@ -28,16 +33,38 @@
       - [1]: https://developer.chrome.com/extensions/contentSecurityPolicy
      -->
 
-  </head>
-  <body>
-    <input type="button" id="status" value="Start" >
-    <div id="container">
-      <ul id="events">
-
-      </ul>
-    </div>
-    <script src="jquery-3.2.1.min.js"></script>
-    <script src="popup.js"></script>
-  </body>
+</head>
+<body>
+<div id="container">
+    <ul id="events">
+        <li class="event">
+            <input type="checkbox" id="clickOption" checked="checked">
+            <label for="clickOption">Click</label>
+        </li>
+        <li class="event">
+            <input type="checkbox" id="changeOption" checked="checked">
+            <label for="changeOption">Change</label>
+        </li>
+        <li class="event">
+            <input type="checkbox" id="submitOption" checked="checked">
+            <label for="submitOption">Submit</label>
+        </li>
+        <li class="event">
+            <input type="checkbox" id="focusOption">
+            <label for="focusOption">Focus</label>
+        </li>
+        <li class="event">
+            <input type="checkbox" id="mouseoverOption">
+            <label for="mouseoverOption">Mouseover</label>
+        </li>
+    </ul>
+</div>
+<input type="button" id="play" value="Play">
+<input type="button" id="assert" value="Assert" class="hidden">
+<input type="button" id="stop" value="Stop" class="hidden">
+<img id='loader' src="Loading_icon.gif" class="hidden">
+<script src="jquery-3.2.1.min.js"></script>
+<script src="popup.js"></script>
+</body>
 </html>
 

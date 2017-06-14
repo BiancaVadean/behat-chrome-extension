@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
 
-  "name": "Getting started example",
-  "description": "This extension shows a Google Image search result for the current page",
+  "name": "Behat recorder",
+  "description": "This is an extension that records events and transform them into Behat test scenarios.",
   "version": "1.0",
 
   "browser_action": {
@@ -18,8 +18,5 @@
   "content_scripts": [{
     "matches":["http://*/*","https://*/*"],
     "js": ["jquery-3.2.1.min.js", "catch_event.js"]
-  }],
-  "background": {
-    "scripts": ["background.js"]
-  }
+  }]
 }

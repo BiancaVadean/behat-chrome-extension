@@ -1,9 +1,10 @@
 jQuery.fn.extend({
-    getPath: function() {
-        var pathes = [];
+    getPath: function () {
+        var paths = [];
 
-        this.each(function(index, element) {
-            var path, $node = jQuery(element);
+        this.each(function (index, element) {
+            var path;
+            var $node = jQuery(element);
 
             while ($node.length) {
                 // debugger;
@@ -14,7 +15,7 @@ jQuery.fn.extend({
                 var selector = null;
                 name = name.toLowerCase();
 
-                if(id) {
+                if (id) {
                     name += '#' + id.trim();
                     selector = name + (path ? ' > ' + path : '');
                     if ($(selector).length === 1) {
@@ -34,15 +35,16 @@ jQuery.fn.extend({
                 }
 
 
-                if (!name) { break; }
+                if (!name) {
+                    break;
+                }
 
                 var parent = $node.parent();
                 var sameTagSiblings = parent.children(name);
 
-                if (sameTagSiblings.length > 1)
-                {
+                if (sameTagSiblings.length > 1) {
                     allSiblings = parent.children();
-                    var index = allSiblings.index(realNode) +1;
+                    var index = allSiblings.index(realNode) + 1;
                     if (index > 0) {
                         name += ':nth-child(' + index + ')';
                     }
@@ -55,21 +57,24 @@ jQuery.fn.extend({
                 $node = parent;
             }
 
-            pathes.push(path);
+            paths.push(path);
         });
 
-        return pathes.join(',');
+        return paths.join(',');
     }
 });
 
 var catchEvent = {
-    i: 0,
+    state: 'waiting',
     init: function () {
         var _this = this;
-        console.log('Here we are!');
-        for (var i in _this.events) {
-            _this.addListener(_this.events[i]);
-        }
+        chrome.storage.onChanged.addListener(function (changedStorage) {
+            if (changedStorage.status) {
+                _this.changeStatus();
+            }
+        });
+
+        this.changeStatus();
     },
     events: [
         'change',
@@ -78,6 +83,41 @@ var catchEvent = {
         'submit',
         // 'mouseover'
     ],
+
+    changeStatus: function () {
+        var _this  = this;
+        chrome.storage.sync.get('status', function (status) {
+            _this.state = status.status;
+
+            switch (_this.state) {
+                case 'waiting':
+                    console.log('wait');
+                    chrome.storage.sync.get('availableEvents', function (items) {
+                        _this.removeListeners(items);
+                        _this.removeListeners(['mouseover'])
+                    });
+                    break;
+                case 'playing':
+                    console.log('play');
+                    chrome.storage.sync.get('availableEvents', function (items) {
+                        _this.addListeners(_this.events);
+                    });
+                    break;
+                case 'asserting':
+                    console.log('asserting');
+                    chrome.storage.sync.get('availableEvents', function (items) {
+                        _this.removeListeners(_this.events);
+                    });
+                    $(document).on('mouseenter', _this.mouseEnter);
+                    $(document).on('mouseleave', _this.mouseLeave);
+                    $(document).on('click', _this.catchAsserts);
+
+                    break;
+            }
+        });
+        // _this.addListeners(_this.events);
+
+    },
 
     storeEvent: function (event) {
         chrome.storage.sync.get('status', function (status) {
@@ -92,10 +132,7 @@ var catchEvent = {
                     object.value = $(event.target).val();
                 }
 
-                if (event.type === 'mouseover') {
-                    console.log($(event.target))
-                    $(event.target).css('border', '2px solid red');
-                }
+
                 console.log(object);
                 chrome.storage.sync.get('events', function (items) {
                     var events;
@@ -123,10 +160,33 @@ var catchEvent = {
         });
 
     },
-    addListener: function (event) {
-        console.log(event)
-        document.addEventListener(event, this.storeEvent);
+    addListeners: function (events) {
+        // console.log(events.length)
+        // if (!events) {
+        //     events = this.events;
+        // }
+        // document.addEventListener(event, this.storeEvent);
+        $(document).on(events.join(' '), this.storeEvent);
     },
+    removeListeners: function (events) {
+        $(document).off(events.join(' '));
+    },
+
+    catchAsserts: function (event) {
+        console.log($(event.target()));
+    },
+    mouseEnter: function (event) {
+        if (event.type === 'mouseenter') {
+            console.log($(event.target))
+            $(event.target).css('border', '2px solid red');
+        }
+    },
+    mouseLeave: function (event) {
+        if (event.type === 'mouseleave') {
+            console.log($(event.target))
+            $(event.target).css('border', 'none');
+        }
+    }
 
 
 };
