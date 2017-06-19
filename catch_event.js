@@ -66,6 +66,10 @@ jQuery.fn.extend({
 
 var catchEvent = {
     state: 'waiting',
+    selectedElement: {
+        initialStyle: '',
+        element: ''
+    },
     init: function () {
         var _this = this;
         chrome.storage.onChanged.addListener(function (changedStorage) {
@@ -85,33 +89,50 @@ var catchEvent = {
     ],
 
     changeStatus: function () {
-        var _this  = this;
+        var _this = this;
         chrome.storage.sync.get('status', function (status) {
             _this.state = status.status;
 
             switch (_this.state) {
                 case 'waiting':
                     console.log('wait');
+                    if (_this.selectedElement.element) {
+                        _this.selectedElement.element.attr('style', _this.selectedElement.initialStyle);
+                    }
+                    _this.removeListeners(['mouseover']);
                     chrome.storage.sync.get('availableEvents', function (items) {
-                        _this.removeListeners(items);
-                        _this.removeListeners(['mouseover'])
+                        _this.removeListeners(_this.events);
                     });
                     break;
                 case 'playing':
                     console.log('play');
+                    if (_this.selectedElement.element) {
+                        _this.selectedElement.element.attr('style', _this.selectedElement.initialStyle);
+                    }
+                    _this.removeListeners(['mouseover']);
                     chrome.storage.sync.get('availableEvents', function (items) {
                         _this.addListeners(_this.events);
                     });
                     break;
                 case 'asserting':
                     console.log('asserting');
-                    chrome.storage.sync.get('availableEvents', function (items) {
-                        _this.removeListeners(_this.events);
+                    // debugger;
+                    events = _this.events.filter(function (el) {
+                        return el != 'click';
                     });
-                    $(document).on('mouseenter', _this.mouseEnter);
-                    $(document).on('mouseleave', _this.mouseLeave);
-                    $(document).on('click', _this.catchAsserts);
+                    chrome.storage.sync.get('availableEvents', function (items) {
+                        _this.removeListeners(events);
+                    });
 
+                    $(document).on('mouseover', function (event) {
+                        _this.onMouseover(event, _this);
+                    });
+
+                    $(document).click(function (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        _this.storeEvent(event);
+                    });
                     break;
             }
         });
@@ -120,74 +141,66 @@ var catchEvent = {
     },
 
     storeEvent: function (event) {
-        chrome.storage.sync.get('status', function (status) {
-            if (status.status) {
-                console.log($(event.target).getPath());
-
-                var object = {
-                    'eventType': event.type,
+        var object;
+        if (this.state === 'asserting') {
+            if (event.type === 'click') {
+                object = {
+                    'eventType': 'assert',
                     'eventTarget': $(event.target).getPath()
-                };
-                if (event.type === 'change') {
-                    object.value = $(event.target).val();
                 }
-
-
-                console.log(object);
-                chrome.storage.sync.get('events', function (items) {
-                    var events;
-
-                    if (items.events) {
-                        events = items.events;
-                    } else {
-                        events = [];
-                        console.log(window.location.href)
-                        var myLocation = {
-                            'eventType': 'navigation',
-                            'eventTarget': '',
-                            'value': window.location.href
-                        };
-                        events.push(myLocation);
-                    }
-                    console.log(events);
-                    events.push(object);
-                    items.events = events;
-                    chrome.storage.sync.set(items);
-                });
-            } else {
-                console.log('Not started.');
             }
-        });
+        } else {
+            object = {
+                'eventType': event.type,
+                'eventTarget': $(event.target).getPath()
+            };
+            if (event.type === 'change') {
+                object.value = $(event.target).val();
+            }
+        }
+        console.log(object);
+        chrome.storage.sync.get('events', function (items) {
+            var events;
 
+            if (items.events) {
+                events = items.events;
+            } else {
+                events = [];
+                console.log(window.location.href)
+                var myLocation = {
+                    'eventType': 'navigation',
+                    'eventTarget': '',
+                    'value': window.location.href
+                };
+                events.push(myLocation);
+            }
+            console.log(events);
+            events.push(object);
+            items.events = events;
+            chrome.storage.sync.set(items);
+        });
     },
     addListeners: function (events) {
-        // console.log(events.length)
-        // if (!events) {
-        //     events = this.events;
-        // }
-        // document.addEventListener(event, this.storeEvent);
         $(document).on(events.join(' '), this.storeEvent);
     },
     removeListeners: function (events) {
         $(document).off(events.join(' '));
     },
+    onMouseover: function (event, _this) {
+        if (event.type === 'mouseover') {
+            if (this.selectedElement.element) {
+                this.selectedElement.element.attr('style', this.selectedElement.initialStyle);
+            }
 
-    catchAsserts: function (event) {
-        console.log($(event.target()));
-    },
-    mouseEnter: function (event) {
-        if (event.type === 'mouseenter') {
-            console.log($(event.target))
-            $(event.target).css('border', '2px solid red');
+            this.selectedElement.element = $(event.target);
+            this.selectedElement.initialStyle = $(event.target).attr('style') ?
+                $(event.target).attr('style') :
+                '';
+
+            this.selectedElement.element.attr('style', this.selectedElement.initialStyle
+                + ' outline: 1px solid red !important');
         }
     },
-    mouseLeave: function (event) {
-        if (event.type === 'mouseleave') {
-            console.log($(event.target))
-            $(event.target).css('border', 'none');
-        }
-    }
-
-
 };
+
 catchEvent.init();

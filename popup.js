@@ -1,4 +1,3 @@
-
 var popup = {
     state: 'waiting',
     // statusButton: document.getElementById('status'),
@@ -6,12 +5,23 @@ var popup = {
     assertButton: $('#assert'),
     stopButton: $('#stop'),
     background: null,
-    init: function() {
+    init: function () {
         var _this = this;
 
-        chrome.storage.sync.get('status', function (status) {
-            _this.state = status.status;
+        $('#clear-events').click(function () {
+            _this.clearEvents();
+        });
+
+        chrome.storage.sync.get(null, function (items) {
+            $('#scenarioName').val(items.name);
+            _this.state = items.status;
             _this.setState()
+        });
+
+
+        $('#scenarioName').change(function (event) {
+           var value = $(this).val()
+            chrome.storage.sync.set({name: value});
         });
 
         this.playButton.click(function () {
@@ -28,12 +38,19 @@ var popup = {
     },
 
     play: function () {
-        // chrome.storage.sync.clear(function() {
-        //     console.log('All cleared!');
-        //
-        //     return;
-        // });
-        this.state = 'playing'
+        var settings = [];
+        var events = $('.event input');
+        console.log(events)
+        events.each(function (i, e) {
+            console.log(e);
+            if (e.checked) {
+                settings.push(e.id);
+            }
+        });
+        console.log(settings);
+        chrome.storage.sync.set({'settings': settings});
+        this.state = 'playing';
+
         this.setState();
     },
 
@@ -45,8 +62,9 @@ var popup = {
     stop: function () {
         this.state = 'waiting'
         this.setState();
-
+        chrome.browserAction.setBadgeText({text: ''});
         $('#loader').removeClass('hidden');
+        $('#scenarioName').val('');
         this.postEvents();
     },
     changeStatus: function () {
@@ -71,13 +89,13 @@ var popup = {
             document.getElementById('status').value = "End";
         } else {
             document.getElementById('status').value = "Start";
-            chrome.storage.sync.get('events', function(items) {
+            chrome.storage.sync.get('events', function (items) {
                 console.log(JSON.stringify(items));
                 if (items.events) {
-                    $.post('http://symfony3/index', {'events': items.events}, function(data, status) {
+                    $.post('http://symfony3/index', {'events': items.events}, function (data, status) {
                         console.log(data);
                         console.log(status);
-                        chrome.storage.sync.clear(function() {
+                        chrome.storage.sync.clear(function () {
                             console.log('All cleared!');
                             return;
                         });
@@ -88,50 +106,65 @@ var popup = {
     },
 
     postEvents: function () {
-        chrome.storage.sync.get('events', function(items) {
+        chrome.storage.sync.get(null, function (items) {
             console.log(JSON.stringify(items));
             if (items.events) {
                 try {
-                    $.post('http://symfony3/index', {'events': items.events}, function(data, status) {
+                    $.post('http://symfony3/index', {
+                        'events': items.events,
+                        'name': $('#scenarioName').val()
+                    }, function (data, status) {
                         console.log(data);
                         console.log(status);
                         $('#loader').addClass('hidden');
-                        chrome.storage.sync.clear(function() {
-                            console.log('All cleared!');
+                        chrome.downloads.download({url: 'http://symfony3/test'}, function () {
 
+                        })
+                        chrome.storage.sync.clear(function () {
                             return;
                         });
                     })
-                        .fail(function() {
+                        .fail(function () {
                             $('#loader').addClass('hidden');
                         });
                 } catch (error) {
                     $('#loader').addClass('hidden');
                 }
+            } else {
+                $('#loader').addClass('hidden');
             }
         });
     },
 
     setState: function () {
         chrome.storage.sync.set({'status': this.state});
-        switch (this.state){
+        $('#state').html(this.state);
+        switch (this.state) {
             case 'playing':
                 this.playButton.addClass('hidden');
-
+                $('#events').addClass('hidden');
                 this.stopButton.removeClass('hidden');
                 this.assertButton.removeClass('hidden');
+                $("#clear-events").show();
                 break;
             case 'asserting':
                 this.assertButton.addClass('hidden');
                 this.stopButton.removeClass('hidden');
                 this.playButton.removeClass('hidden');
+                $("#clear-events").show();
                 break;
             default:
                 this.stopButton.addClass('hidden');
+                $('#events').removeClass('hidden');
                 this.playButton.removeClass('hidden');
                 this.assertButton.removeClass('hidden');
+                $('#state').html('waiting');
+                $("#clear-events").hide();
                 break;
         }
+    },
+    clearEvents: function () {
+        chrome.storage.sync.set({events: null});
     }
 };
 popup.init();

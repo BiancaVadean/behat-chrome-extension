@@ -1,0 +1,6 @@
+Feature: This is a new feature
+
+Scenario: This is a new scenario
+Given I am on "http://andrei.ase.ro/"
+When I click on the element "a:nth-child(7)"
+Then I should see an "div:nth-child(1) > a" element
